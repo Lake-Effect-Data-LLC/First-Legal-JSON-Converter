@@ -229,6 +229,12 @@
       font-weight: 700;
     }
 
+    .panel-title {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
     .meta {
       color: var(--muted);
       font-size: 13px;
@@ -260,6 +266,51 @@
 
     textarea[readonly] {
       background: #f8fafc;
+    }
+
+    .output-view {
+      width: 100%;
+      height: clamp(460px, calc(100vh - 390px), 720px);
+      min-height: 220px;
+      max-height: 720px;
+      margin: 0;
+      overflow: auto;
+      border: 0;
+      padding: 16px;
+      background: #f8fafc;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre;
+      tab-size: 2;
+    }
+
+    .output-placeholder {
+      color: #8a98aa;
+    }
+
+    .json-key {
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    .json-string {
+      color: #246b43;
+    }
+
+    .json-number {
+      color: #9f4f11;
+    }
+
+    .json-boolean {
+      color: #6d3fb1;
+      font-weight: 700;
+    }
+
+    .json-null {
+      color: #7a8494;
+      font-weight: 700;
     }
 
     .footer {
@@ -368,6 +419,11 @@
         min-height: 320px;
         height: 320px;
       }
+
+      .output-view {
+        min-height: 320px;
+        height: 320px;
+      }
     }
   </style>
 </head>
@@ -419,10 +475,10 @@
 
         <div class="panel">
           <div class="panel-header">
-            <label for="output">Converted JSON</label>
+            <span class="panel-title">Converted JSON</span>
             <span class="meta" id="output-meta">0 keys</span>
           </div>
-          <textarea id="output" readonly spellcheck="false" placeholder="Output will appear here"></textarea>
+          <pre id="output" class="output-view" aria-label="Converted JSON output"><code><span class="output-placeholder">Output will appear here</span></code></pre>
         </div>
       </div>
 
@@ -435,6 +491,7 @@
   <script>
     const state = {
       mode: 'toCamel',
+      outputText: '',
       lastWarnings: []
     };
 
@@ -526,6 +583,52 @@
       return Object.entries(value).reduce((total, [, childValue]) => total + 1 + countKeys(childValue), 0);
     }
 
+    function escapeHtml(value) {
+      return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function highlightJson(json) {
+      const escaped = escapeHtml(json);
+      return escaped.replace(/("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")(\s*:)?|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g, (match, stringToken, keySuffix, booleanToken) => {
+        if (stringToken && keySuffix) {
+          return `<span class="json-key">${stringToken}</span>${keySuffix}`;
+        }
+
+        if (stringToken) {
+          return `<span class="json-string">${stringToken}</span>`;
+        }
+
+        if (booleanToken) {
+          return `<span class="json-boolean">${match}</span>`;
+        }
+
+        if (match === 'null') {
+          return '<span class="json-null">null</span>';
+        }
+
+        return `<span class="json-number">${match}</span>`;
+      });
+    }
+
+    function renderOutput(value) {
+      state.outputText = value;
+
+      if (!value) {
+        els.output.innerHTML = '<code><span class="output-placeholder">Output will appear here</span></code>';
+        return;
+      }
+
+      els.output.innerHTML = `<code>${highlightJson(value)}</code>`;
+    }
+
+    function clearOutput() {
+      renderOutput('');
+      els.outputMeta.textContent = '0 keys';
+    }
+
     function setStatus(message, type) {
       els.status.textContent = message;
       els.status.className = `status show ${type}`;
@@ -543,8 +646,7 @@
       els.toPascal.classList.toggle('active', !toCamel);
       els.toCamel.setAttribute('aria-pressed', String(toCamel));
       els.toPascal.setAttribute('aria-pressed', String(!toCamel));
-      els.output.value = '';
-      els.outputMeta.textContent = '0 keys';
+      clearOutput();
       setStatus('Mode selected. Press Convert to update the output.', 'warn');
     }
 
@@ -570,9 +672,8 @@
       state.lastWarnings = [];
 
       if (!input) {
-        els.output.value = '';
+        clearOutput();
         els.inputMeta.textContent = '0 keys';
-        els.outputMeta.textContent = '0 keys';
         clearStatus();
         return;
       }
@@ -584,7 +685,7 @@
         const inputKeys = countKeys(parsed);
         const outputKeys = countKeys(result);
 
-        els.output.value = JSON.stringify(result, null, 2);
+        renderOutput(JSON.stringify(result, null, 2));
         els.inputMeta.textContent = `${inputKeys} ${inputKeys === 1 ? 'key' : 'keys'}`;
         els.outputMeta.textContent = `${outputKeys} ${outputKeys === 1 ? 'key' : 'keys'}`;
 
@@ -594,14 +695,13 @@
           setStatus('Converted', 'ok');
         }
       } catch (error) {
-        els.output.value = '';
-        els.outputMeta.textContent = '0 keys';
+        clearOutput();
         setStatus(error.message || 'Invalid JSON', 'err');
       }
     }
 
     async function copyOutput() {
-      const value = els.output.value;
+      const value = state.outputText;
       if (!value) {
         setStatus('Nothing to copy', 'warn');
         return;
@@ -611,17 +711,14 @@
         await navigator.clipboard.writeText(value);
         setStatus('Copied to clipboard', 'ok');
       } catch (error) {
-        els.output.focus();
-        els.output.select();
-        setStatus('Select the output and copy manually', 'warn');
+        setStatus('Could not copy to clipboard', 'warn');
       }
     }
 
     function clearAll() {
       els.input.value = '';
-      els.output.value = '';
+      clearOutput();
       els.inputMeta.textContent = '0 keys';
-      els.outputMeta.textContent = '0 keys';
       clearStatus();
       els.input.focus();
     }
@@ -633,8 +730,7 @@
     els.clear.addEventListener('click', clearAll);
     els.input.addEventListener('input', () => {
       updateInputMeta();
-      els.output.value = '';
-      els.outputMeta.textContent = '0 keys';
+      clearOutput();
       clearStatus();
     });
 
