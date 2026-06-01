@@ -335,6 +335,46 @@
       margin-left: auto;
     }
 
+    .change-nav {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .change-nav.show {
+      display: inline-flex;
+    }
+
+    .nav-btn {
+      min-height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 10px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      border-color: var(--border-strong);
+      background: #f3f7fc;
+    }
+
+    .nav-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .change-active {
+      border-radius: 3px;
+      background: #ffe08a;
+      color: #111827;
+      outline: 2px solid #d69e00;
+    }
+
     .sr-only {
       position: absolute;
       width: 1px;
@@ -387,7 +427,8 @@
         flex: 1;
       }
 
-      .change-count {
+      .change-count,
+      .change-nav {
         margin-left: 0;
       }
 
@@ -469,7 +510,11 @@
 
       <div class="footer">
         <span id="status" class="status" role="status" aria-live="polite"></span>
-        <span id="change-count" class="status ok change-count" aria-live="polite"></span>
+        <div id="change-nav" class="change-nav">
+          <button class="nav-btn" id="prev-change" type="button">Previous</button>
+          <span id="change-count" class="status ok change-count" aria-live="polite"></span>
+          <button class="nav-btn" id="next-change" type="button">Next</button>
+        </div>
       </div>
     </section>
   </main>
@@ -478,6 +523,8 @@
     const state = {
       mode: 'toCamel',
       outputText: '',
+      changePositions: [],
+      activeChangeIndex: -1,
       lastWarnings: []
     };
 
@@ -506,7 +553,10 @@
       inputMeta: document.getElementById('input-meta'),
       outputMeta: document.getElementById('output-meta'),
       status: document.getElementById('status'),
+      changeNav: document.getElementById('change-nav'),
       changeCount: document.getElementById('change-count'),
+      prevChange: document.getElementById('prev-change'),
+      nextChange: document.getElementById('next-change'),
       toCamel: document.getElementById('btn-to-camel'),
       toPascal: document.getElementById('btn-to-pascal'),
       convert: document.getElementById('convert-btn'),
@@ -572,17 +622,17 @@
       };
     }
 
-    function countChangedCharacters(before, after) {
+    function getChangedCharacterPositions(before, after) {
       const length = Math.max(before.length, after.length);
-      let changed = 0;
+      const positions = [];
 
       for (let index = 0; index < length; index += 1) {
         if (before[index] !== after[index]) {
-          changed += 1;
+          positions.push(index);
         }
       }
 
-      return changed;
+      return positions;
     }
 
     function countKeys(value) {
@@ -604,7 +654,7 @@
         .replace(/>/g, '&gt;');
     }
 
-    function renderOutput(value) {
+    function renderOutput(value, activePosition = -1) {
       state.outputText = value;
 
       if (!value) {
@@ -612,14 +662,59 @@
         return;
       }
 
-      els.output.innerHTML = `<code>${escapeHtml(value)}</code>`;
+      if (activePosition < 0 || activePosition >= value.length) {
+        els.output.innerHTML = `<code>${escapeHtml(value)}</code>`;
+        return;
+      }
+
+      const before = escapeHtml(value.slice(0, activePosition));
+      const active = escapeHtml(value[activePosition]);
+      const after = escapeHtml(value.slice(activePosition + 1));
+      els.output.innerHTML = `<code>${before}<span class="change-active" id="active-change">${active}</span>${after}</code>`;
     }
 
     function clearOutput() {
       renderOutput('');
       els.outputMeta.textContent = '0 keys';
+      state.changePositions = [];
+      state.activeChangeIndex = -1;
+      els.changeNav.className = 'change-nav';
       els.changeCount.textContent = '';
       els.changeCount.className = 'status ok change-count';
+    }
+
+    function updateChangeNav() {
+      const total = state.changePositions.length;
+
+      if (total === 0) {
+        state.activeChangeIndex = -1;
+        els.changeNav.className = 'change-nav';
+        return;
+      }
+
+      els.changeNav.className = 'change-nav show';
+      els.changeCount.textContent = `${total} ${total === 1 ? 'character' : 'characters'} changed`;
+      els.changeCount.className = 'status ok show change-count';
+      els.prevChange.disabled = total < 2;
+      els.nextChange.disabled = total < 2;
+    }
+
+    function showActiveChange() {
+      const position = state.changePositions[state.activeChangeIndex] ?? -1;
+      renderOutput(state.outputText, position);
+      updateChangeNav();
+      document.getElementById('active-change')?.scrollIntoView({
+        block: 'center',
+        inline: 'center'
+      });
+    }
+
+    function moveChange(direction) {
+      const total = state.changePositions.length;
+      if (total === 0) return;
+
+      state.activeChangeIndex = (state.activeChangeIndex + direction + total) % total;
+      showActiveChange();
     }
 
     function setStatus(message, type) {
@@ -669,13 +764,13 @@
       const fn = state.mode === 'toCamel' ? pascalToCamel : camelToPascal;
       const result = transformJsonLikeKeys(input, fn);
 
-      renderOutput(result.output);
+      state.changePositions = getChangedCharacterPositions(input, result.output);
+      state.activeChangeIndex = state.changePositions.length ? 0 : -1;
+      renderOutput(result.output, state.changePositions[state.activeChangeIndex] ?? -1);
       els.inputMeta.textContent = `${result.totalKeys} ${result.totalKeys === 1 ? 'key' : 'keys'}`;
       els.outputMeta.textContent = `${result.totalKeys} ${result.totalKeys === 1 ? 'key' : 'keys'}`;
       setStatus('Converted', 'ok');
-      const changedCharacters = countChangedCharacters(input, result.output);
-      els.changeCount.textContent = `${changedCharacters} ${changedCharacters === 1 ? 'character' : 'characters'} changed`;
-      els.changeCount.className = 'status ok show change-count';
+      updateChangeNav();
     }
 
     async function copyOutput() {
@@ -706,6 +801,8 @@
     els.convert.addEventListener('click', convert);
     els.copy.addEventListener('click', copyOutput);
     els.clear.addEventListener('click', clearAll);
+    els.prevChange.addEventListener('click', () => moveChange(-1));
+    els.nextChange.addEventListener('click', () => moveChange(1));
     els.input.addEventListener('input', () => {
       updateInputMeta();
       clearOutput();
