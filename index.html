@@ -525,6 +525,7 @@
       outputText: '',
       changePositions: [],
       activeChangeIndex: -1,
+      changeHighlightVisible: false,
       lastWarnings: []
     };
 
@@ -678,6 +679,7 @@
       els.outputMeta.textContent = '0 keys';
       state.changePositions = [];
       state.activeChangeIndex = -1;
+      state.changeHighlightVisible = false;
       els.changeNav.className = 'change-nav';
       els.changeCount.textContent = '';
       els.changeCount.className = 'status ok change-count';
@@ -688,6 +690,7 @@
 
       if (total === 0) {
         state.activeChangeIndex = -1;
+        state.changeHighlightVisible = false;
         els.changeNav.className = 'change-nav';
         return;
       }
@@ -701,6 +704,7 @@
 
     function showActiveChange() {
       const position = state.changePositions[state.activeChangeIndex] ?? -1;
+      state.changeHighlightVisible = true;
       renderOutput(state.outputText, position);
       updateChangeNav();
       document.getElementById('active-change')?.scrollIntoView({
@@ -713,14 +717,15 @@
       const total = state.changePositions.length;
       if (total === 0) return;
 
-      state.activeChangeIndex = (state.activeChangeIndex + direction + total) % total;
+      const currentIndex = state.activeChangeIndex < 0 ? (direction > 0 ? -1 : 0) : state.activeChangeIndex;
+      state.activeChangeIndex = (currentIndex + direction + total) % total;
       showActiveChange();
     }
 
     function clearActiveChange() {
-      if (state.activeChangeIndex < 0) return;
+      if (!state.changeHighlightVisible) return;
 
-      state.activeChangeIndex = -1;
+      state.changeHighlightVisible = false;
       renderOutput(state.outputText);
       updateChangeNav();
     }
@@ -774,6 +779,7 @@
 
       state.changePositions = getChangedCharacterPositions(input, result.output);
       state.activeChangeIndex = state.changePositions.length ? 0 : -1;
+      state.changeHighlightVisible = state.changePositions.length > 0;
       renderOutput(result.output, state.changePositions[state.activeChangeIndex] ?? -1);
       els.inputMeta.textContent = `${result.totalKeys} ${result.totalKeys === 1 ? 'key' : 'keys'}`;
       els.outputMeta.textContent = `${result.totalKeys} ${result.totalKeys === 1 ? 'key' : 'keys'}`;
