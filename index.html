@@ -597,6 +597,34 @@
       return Object.entries(value).reduce((total, [, childValue]) => total + 1 + countKeys(childValue), 0);
     }
 
+    function parseJsonLenient(input) {
+      try {
+        return {
+          value: JSON.parse(input),
+          repairs: 0
+        };
+      } catch (strictError) {
+        let repairs = 0;
+        const repaired = input.replace(/^(\s*"[^"]+"\s*:\s*".*%22)\s*,\s*$/gm, (line, valuePart) => {
+          repairs += 1;
+          return `${valuePart}",`;
+        });
+
+        if (repairs === 0 || repaired === input) {
+          throw strictError;
+        }
+
+        try {
+          return {
+            value: JSON.parse(repaired),
+            repairs
+          };
+        } catch (repairError) {
+          throw strictError;
+        }
+      }
+    }
+
     function escapeHtml(value) {
       return value
         .replace(/&/g, '&amp;')
@@ -675,7 +703,7 @@
       }
 
       try {
-        const parsed = JSON.parse(input);
+        const { value: parsed } = parseJsonLenient(input);
         const inputKeys = countKeys(parsed);
         els.inputMeta.textContent = `${inputKeys} ${inputKeys === 1 ? 'key' : 'keys'}`;
       } catch (error) {
@@ -696,7 +724,7 @@
       }
 
       try {
-        const parsed = JSON.parse(input);
+        const { value: parsed, repairs } = parseJsonLenient(input);
         const fn = state.mode === 'toCamel' ? pascalToCamel : camelToPascal;
         const result = transformKeys(parsed, fn);
         const inputKeys = countKeys(parsed);
@@ -708,6 +736,8 @@
 
         if (state.lastWarnings.length) {
           setStatus(`${state.lastWarnings.length} duplicate ${state.lastWarnings.length === 1 ? 'key' : 'keys'} after conversion`, 'warn');
+        } else if (repairs > 0) {
+          setStatus(`Converted after ${repairs} URL quote ${repairs === 1 ? 'repair' : 'repairs'}`, 'warn');
         } else {
           setStatus('Converted', 'ok');
         }
