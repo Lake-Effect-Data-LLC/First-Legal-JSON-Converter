@@ -290,29 +290,6 @@
       color: #8a98aa;
     }
 
-    .json-key {
-      color: var(--brand);
-      font-weight: 700;
-    }
-
-    .json-string {
-      color: #246b43;
-    }
-
-    .json-number {
-      color: #9f4f11;
-    }
-
-    .json-boolean {
-      color: #6d3fb1;
-      font-weight: 700;
-    }
-
-    .json-null {
-      color: #7a8494;
-      font-weight: 700;
-    }
-
     .footer {
       display: flex;
       align-items: flex-start;
@@ -627,29 +604,6 @@
         .replace(/>/g, '&gt;');
     }
 
-    function highlightJson(json) {
-      const escaped = escapeHtml(json);
-      return escaped.replace(/("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")(\s*:)?|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g, (match, stringToken, keySuffix, booleanToken) => {
-        if (stringToken && keySuffix) {
-          return `<span class="json-key">${stringToken}</span>${keySuffix}`;
-        }
-
-        if (stringToken) {
-          return `<span class="json-string">${stringToken}</span>`;
-        }
-
-        if (booleanToken) {
-          return `<span class="json-boolean">${match}</span>`;
-        }
-
-        if (match === 'null') {
-          return '<span class="json-null">null</span>';
-        }
-
-        return `<span class="json-number">${match}</span>`;
-      });
-    }
-
     function renderOutput(value) {
       state.outputText = value;
 
@@ -658,7 +612,7 @@
         return;
       }
 
-      els.output.innerHTML = `<code>${highlightJson(value)}</code>`;
+      els.output.innerHTML = `<code>${escapeHtml(value)}</code>`;
     }
 
     function clearOutput() {
