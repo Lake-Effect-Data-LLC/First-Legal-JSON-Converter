@@ -354,6 +354,10 @@
       color: var(--warning);
     }
 
+    .change-count {
+      margin-left: auto;
+    }
+
     .sr-only {
       position: absolute;
       width: 1px;
@@ -404,6 +408,10 @@
 
       .btn {
         flex: 1;
+      }
+
+      .change-count {
+        margin-left: 0;
       }
 
       .workspace {
@@ -484,6 +492,7 @@
 
       <div class="footer">
         <span id="status" class="status" role="status" aria-live="polite"></span>
+        <span id="change-count" class="status ok change-count" aria-live="polite"></span>
       </div>
     </section>
   </main>
@@ -492,6 +501,7 @@
     const state = {
       mode: 'toCamel',
       outputText: '',
+      changedKeys: 0,
       lastWarnings: []
     };
 
@@ -520,6 +530,7 @@
       inputMeta: document.getElementById('input-meta'),
       outputMeta: document.getElementById('output-meta'),
       status: document.getElementById('status'),
+      changeCount: document.getElementById('change-count'),
       toCamel: document.getElementById('btn-to-camel'),
       toPascal: document.getElementById('btn-to-pascal'),
       convert: document.getElementById('convert-btn'),
@@ -563,6 +574,9 @@
       const result = {};
       for (const [key, childValue] of Object.entries(value)) {
         const nextKey = fn(key);
+        if (nextKey !== key) {
+          state.changedKeys += 1;
+        }
         if (Object.prototype.hasOwnProperty.call(result, nextKey)) {
           state.lastWarnings.push(`Duplicate key after conversion at ${path}: ${nextKey}`);
         }
@@ -627,6 +641,8 @@
     function clearOutput() {
       renderOutput('');
       els.outputMeta.textContent = '0 keys';
+      els.changeCount.textContent = '';
+      els.changeCount.className = 'status ok change-count';
     }
 
     function setStatus(message, type) {
@@ -670,6 +686,7 @@
     function convert() {
       const input = els.input.value.trim();
       state.lastWarnings = [];
+      state.changedKeys = 0;
 
       if (!input) {
         clearOutput();
@@ -694,6 +711,8 @@
         } else {
           setStatus('Converted', 'ok');
         }
+        els.changeCount.textContent = `${state.changedKeys} ${state.changedKeys === 1 ? 'key' : 'keys'} changed`;
+        els.changeCount.className = 'status ok show change-count';
       } catch (error) {
         clearOutput();
         setStatus(error.message || 'Invalid JSON', 'err');
