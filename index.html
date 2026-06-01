@@ -354,6 +354,10 @@
       color: var(--warning);
     }
 
+    .change-count {
+      margin-left: auto;
+    }
+
     .sr-only {
       position: absolute;
       width: 1px;
@@ -404,6 +408,10 @@
 
       .btn {
         flex: 1;
+      }
+
+      .change-count {
+        margin-left: 0;
       }
 
       .workspace {
@@ -484,6 +492,7 @@
 
       <div class="footer">
         <span id="status" class="status" role="status" aria-live="polite"></span>
+        <span id="change-count" class="status ok change-count" aria-live="polite"></span>
       </div>
     </section>
   </main>
@@ -520,6 +529,7 @@
       inputMeta: document.getElementById('input-meta'),
       outputMeta: document.getElementById('output-meta'),
       status: document.getElementById('status'),
+      changeCount: document.getElementById('change-count'),
       toCamel: document.getElementById('btn-to-camel'),
       toPascal: document.getElementById('btn-to-pascal'),
       convert: document.getElementById('convert-btn'),
@@ -585,6 +595,19 @@
       };
     }
 
+    function countChangedCharacters(before, after) {
+      const length = Math.max(before.length, after.length);
+      let changed = 0;
+
+      for (let index = 0; index < length; index += 1) {
+        if (before[index] !== after[index]) {
+          changed += 1;
+        }
+      }
+
+      return changed;
+    }
+
     function countKeys(value) {
       if (Array.isArray(value)) {
         return value.reduce((total, item) => total + countKeys(item), 0);
@@ -641,6 +664,8 @@
     function clearOutput() {
       renderOutput('');
       els.outputMeta.textContent = '0 keys';
+      els.changeCount.textContent = '';
+      els.changeCount.className = 'status ok change-count';
     }
 
     function setStatus(message, type) {
@@ -694,6 +719,9 @@
       els.inputMeta.textContent = `${result.totalKeys} ${result.totalKeys === 1 ? 'key' : 'keys'}`;
       els.outputMeta.textContent = `${result.totalKeys} ${result.totalKeys === 1 ? 'key' : 'keys'}`;
       setStatus('Converted', 'ok');
+      const changedCharacters = countChangedCharacters(input, result.output);
+      els.changeCount.textContent = `${changedCharacters} ${changedCharacters === 1 ? 'character' : 'characters'} changed`;
+      els.changeCount.className = 'status ok show change-count';
     }
 
     async function copyOutput() {
