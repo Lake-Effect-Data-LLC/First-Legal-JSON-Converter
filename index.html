@@ -50,6 +50,9 @@
     }
 
     .app {
+      display: flex;
+      min-height: 100vh;
+      flex-direction: column;
       width: min(1680px, calc(100% - 64px));
       margin: 0 auto;
       padding: 28px 0;
@@ -106,6 +109,10 @@
     }
 
     .shell {
+      display: flex;
+      min-height: 0;
+      flex: 1;
+      flex-direction: column;
       overflow: hidden;
       border: 1px solid #c7d3e4;
       border-radius: 8px;
@@ -197,6 +204,8 @@
 
     .workspace {
       display: grid;
+      min-height: 0;
+      flex: 1;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       align-items: stretch;
     }
@@ -204,6 +213,7 @@
     .panel {
       display: flex;
       min-width: 0;
+      min-height: 0;
       flex-direction: column;
       background: #fff;
     }
@@ -243,9 +253,9 @@
 
     textarea {
       width: 100%;
-      height: clamp(460px, calc(100vh - 390px), 720px);
+      flex: 1;
+      height: auto;
       min-height: 220px;
-      max-height: 720px;
       resize: vertical;
       border: 0;
       outline: 0;
@@ -270,9 +280,9 @@
 
     .output-view {
       width: 100%;
-      height: clamp(460px, calc(100vh - 390px), 720px);
+      flex: 1;
+      height: auto;
       min-height: 220px;
-      max-height: 720px;
       margin: 0;
       overflow: auto;
       border: 0;
