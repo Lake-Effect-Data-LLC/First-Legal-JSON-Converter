@@ -73,57 +73,10 @@
     }
 
     .brand-logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 0 0 auto;
-      color: #fff;
-    }
-
-    .brand-mark {
-      position: relative;
-      display: grid;
-      place-items: center;
-      width: 62px;
-      height: 62px;
-      border: 3px solid #fff;
-      background: #fff;
-      color: var(--brand);
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 31px;
-      font-weight: 800;
-      line-height: 1;
-      letter-spacing: -0.04em;
-    }
-
-    .brand-mark::after {
-      position: absolute;
-      inset: 6px;
-      border: 3px solid var(--brand);
-      content: "";
-      pointer-events: none;
-    }
-
-    .brand-mark span {
-      position: relative;
-      z-index: 1;
-    }
-
-    .wordmark {
-      display: flex;
-      align-items: baseline;
-      color: #fff;
-      font-size: clamp(32px, 4vw, 48px);
-      line-height: 1;
-      letter-spacing: 0.02em;
-    }
-
-    .wordmark .first {
-      font-weight: 300;
-    }
-
-    .wordmark .legal {
-      font-weight: 800;
+      display: block;
+      width: min(420px, 52vw);
+      height: auto;
+      flex: 0 1 auto;
     }
 
     .brand-text {
@@ -380,22 +333,7 @@
       }
 
       .brand-logo {
-        gap: 10px;
-      }
-
-      .brand-mark {
-        width: 50px;
-        height: 50px;
-        font-size: 25px;
-      }
-
-      .brand-mark::after {
-        inset: 5px;
-        border-width: 2px;
-      }
-
-      .wordmark {
-        font-size: 29px;
+        width: min(100%, 360px);
       }
 
       .actions,
@@ -430,10 +368,7 @@
   <main class="app">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-logo" role="img" aria-label="First Legal">
-          <div class="brand-mark" aria-hidden="true"><span>FL</span></div>
-          <div class="wordmark" aria-hidden="true"><span class="first">FIRST</span><span class="legal">LEGAL</span></div>
-        </div>
+        <img class="brand-logo" src="assets/first-legal-logo.svg" alt="First Legal">
         <div class="brand-text">
           <p class="eyebrow">Internal Tool</p>
           <h1>JSON Case Converter</h1>
