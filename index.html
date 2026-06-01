@@ -7,16 +7,17 @@
   <style>
     :root {
       color-scheme: light;
-      --bg: #f4f7fb;
+      --bg: #f3f6fa;
       --surface: #ffffff;
-      --surface-soft: #f8fafc;
-      --text: #172033;
-      --muted: #64748b;
-      --border: #d8e0ea;
-      --border-strong: #aebccd;
-      --brand: #1452a3;
-      --brand-dark: #0d3975;
-      --brand-soft: #e9f1fc;
+      --surface-soft: #f7f9fc;
+      --text: #111827;
+      --muted: #5f6f86;
+      --border: #d5deea;
+      --border-strong: #9caec4;
+      --brand: #082f6f;
+      --brand-dark: #05245a;
+      --brand-soft: #e6eef9;
+      --brand-line: #0e438f;
       --success: #0f7a45;
       --success-bg: #e8f7ef;
       --danger: #b42318;
@@ -35,9 +36,7 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background:
-        linear-gradient(180deg, #eef4fb 0%, var(--bg) 260px),
-        var(--bg);
+      background: var(--bg);
       color: var(--text);
       font-family: var(--sans);
     }
@@ -58,36 +57,84 @@
       align-items: center;
       justify-content: space-between;
       gap: 18px;
-      margin-bottom: 22px;
+      margin-bottom: 18px;
+      padding: 16px 18px;
+      border-radius: 8px;
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 0 18px 44px rgba(8, 47, 111, 0.18);
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 18px;
       min-width: 0;
     }
 
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 0 0 auto;
+      color: #fff;
+    }
+
     .brand-mark {
+      position: relative;
       display: grid;
       place-items: center;
-      width: 42px;
-      height: 42px;
-      border-radius: 8px;
-      background: var(--brand);
-      color: #fff;
+      width: 62px;
+      height: 62px;
+      border: 3px solid #fff;
+      background: #fff;
+      color: var(--brand);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 31px;
       font-weight: 800;
-      letter-spacing: 0;
-      box-shadow: 0 10px 26px rgba(20, 82, 163, 0.24);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-mark::after {
+      position: absolute;
+      inset: 6px;
+      border: 3px solid var(--brand);
+      content: "";
+      pointer-events: none;
+    }
+
+    .brand-mark span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .wordmark {
+      display: flex;
+      align-items: baseline;
+      color: #fff;
+      font-size: clamp(32px, 4vw, 48px);
+      line-height: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .wordmark .first {
+      font-weight: 300;
+    }
+
+    .wordmark .legal {
+      font-weight: 800;
     }
 
     .brand-text {
       min-width: 0;
+      margin-left: auto;
+      text-align: right;
     }
 
     .eyebrow {
       margin: 0 0 2px;
-      color: var(--muted);
+      color: rgba(255, 255, 255, 0.72);
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -96,14 +143,14 @@
 
     h1 {
       margin: 0;
-      font-size: clamp(24px, 3vw, 36px);
+      font-size: clamp(22px, 2.6vw, 32px);
       line-height: 1.08;
       letter-spacing: 0;
     }
 
     .shell {
       overflow: hidden;
-      border: 1px solid var(--border);
+      border: 1px solid #c7d3e4;
       border-radius: 8px;
       background: var(--surface);
       box-shadow: var(--shadow);
@@ -115,7 +162,7 @@
       gap: 12px;
       padding: 14px;
       border-bottom: 1px solid var(--border);
-      background: var(--surface-soft);
+      background: #eef3f9;
     }
 
     .mode-toggle {
@@ -171,7 +218,7 @@
 
     .btn:hover {
       border-color: var(--border-strong);
-      background: #f8fbff;
+      background: #f3f7fc;
     }
 
     .btn-primary {
@@ -239,7 +286,7 @@
       border: 0;
       outline: 0;
       padding: 16px;
-      background: #fbfdff;
+      background: #fbfcfe;
       color: var(--text);
       font-family: var(--mono);
       font-size: 13px;
@@ -322,6 +369,35 @@
         flex-direction: column;
       }
 
+      .brand {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .brand-text {
+        margin-left: 0;
+        text-align: left;
+      }
+
+      .brand-logo {
+        gap: 10px;
+      }
+
+      .brand-mark {
+        width: 50px;
+        height: 50px;
+        font-size: 25px;
+      }
+
+      .brand-mark::after {
+        inset: 5px;
+        border-width: 2px;
+      }
+
+      .wordmark {
+        font-size: 29px;
+      }
+
       .actions,
       .mode-toggle {
         width: 100%;
@@ -354,9 +430,12 @@
   <main class="app">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">FL</div>
+        <div class="brand-logo" role="img" aria-label="First Legal">
+          <div class="brand-mark" aria-hidden="true"><span>FL</span></div>
+          <div class="wordmark" aria-hidden="true"><span class="first">FIRST</span><span class="legal">LEGAL</span></div>
+        </div>
         <div class="brand-text">
-          <p class="eyebrow">First Legal</p>
+          <p class="eyebrow">Internal Tool</p>
           <h1>JSON Case Converter</h1>
         </div>
       </div>
@@ -528,7 +607,26 @@
       els.toPascal.classList.toggle('active', !toCamel);
       els.toCamel.setAttribute('aria-pressed', String(toCamel));
       els.toPascal.setAttribute('aria-pressed', String(!toCamel));
-      convert();
+      els.output.value = '';
+      els.outputMeta.textContent = '0 keys';
+      setStatus('Mode selected. Press Convert to update the output.', 'warn');
+    }
+
+    function updateInputMeta() {
+      const input = els.input.value.trim();
+
+      if (!input) {
+        els.inputMeta.textContent = '0 keys';
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(input);
+        const inputKeys = countKeys(parsed);
+        els.inputMeta.textContent = `${inputKeys} ${inputKeys === 1 ? 'key' : 'keys'}`;
+      } catch (error) {
+        els.inputMeta.textContent = 'Invalid JSON';
+      }
     }
 
     function convert() {
@@ -597,9 +695,14 @@
     els.convert.addEventListener('click', convert);
     els.copy.addEventListener('click', copyOutput);
     els.clear.addEventListener('click', clearAll);
-    els.input.addEventListener('input', convert);
+    els.input.addEventListener('input', () => {
+      updateInputMeta();
+      els.output.value = '';
+      els.outputMeta.textContent = '0 keys';
+      clearStatus();
+    });
 
-    convert();
+    updateInputMeta();
   </script>
 </body>
 </html>
