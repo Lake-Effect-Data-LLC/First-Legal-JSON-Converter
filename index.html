@@ -585,6 +585,25 @@
       return result;
     }
 
+    function transformJsonLikeKeys(input, fn) {
+      let totalKeys = 0;
+      let changedKeys = 0;
+      const output = input.replace(/(^|[{\[,]\s*)("((?:\\.|[^"\\])*)"\s*:)/gm, (match, prefix, keyToken, key) => {
+        const nextKey = fn(key);
+        totalKeys += 1;
+        if (nextKey !== key) {
+          changedKeys += 1;
+        }
+        return `${prefix}${keyToken.replace(`"${key}"`, `"${nextKey}"`)}`;
+      });
+
+      return {
+        output,
+        totalKeys,
+        changedKeys
+      };
+    }
+
     function countKeys(value) {
       if (Array.isArray(value)) {
         return value.reduce((total, item) => total + countKeys(item), 0);
@@ -595,34 +614,6 @@
       }
 
       return Object.entries(value).reduce((total, [, childValue]) => total + 1 + countKeys(childValue), 0);
-    }
-
-    function parseJsonLenient(input) {
-      try {
-        return {
-          value: JSON.parse(input),
-          repairs: 0
-        };
-      } catch (strictError) {
-        let repairs = 0;
-        const repaired = input.replace(/^(\s*"[^"]+"\s*:\s*".*%22)\s*,\s*$/gm, (line, valuePart) => {
-          repairs += 1;
-          return `${valuePart}",`;
-        });
-
-        if (repairs === 0 || repaired === input) {
-          throw strictError;
-        }
-
-        try {
-          return {
-            value: JSON.parse(repaired),
-            repairs
-          };
-        } catch (repairError) {
-          throw strictError;
-        }
-      }
     }
 
     function escapeHtml(value) {
@@ -702,51 +693,32 @@
         return;
       }
 
-      try {
-        const { value: parsed } = parseJsonLenient(input);
-        const inputKeys = countKeys(parsed);
-        els.inputMeta.textContent = `${inputKeys} ${inputKeys === 1 ? 'key' : 'keys'}`;
-      } catch (error) {
-        els.inputMeta.textContent = 'Invalid JSON';
-      }
+      const keyCount = transformJsonLikeKeys(input, key => key).totalKeys;
+      els.inputMeta.textContent = `${keyCount} ${keyCount === 1 ? 'key' : 'keys'}`;
     }
 
     function convert() {
-      const input = els.input.value.trim();
+      const input = els.input.value;
       state.lastWarnings = [];
       state.changedKeys = 0;
 
-      if (!input) {
+      if (!input.trim()) {
         clearOutput();
         els.inputMeta.textContent = '0 keys';
         clearStatus();
         return;
       }
 
-      try {
-        const { value: parsed, repairs } = parseJsonLenient(input);
-        const fn = state.mode === 'toCamel' ? pascalToCamel : camelToPascal;
-        const result = transformKeys(parsed, fn);
-        const inputKeys = countKeys(parsed);
-        const outputKeys = countKeys(result);
+      const fn = state.mode === 'toCamel' ? pascalToCamel : camelToPascal;
+      const result = transformJsonLikeKeys(input, fn);
+      state.changedKeys = result.changedKeys;
 
-        renderOutput(JSON.stringify(result, null, 2));
-        els.inputMeta.textContent = `${inputKeys} ${inputKeys === 1 ? 'key' : 'keys'}`;
-        els.outputMeta.textContent = `${outputKeys} ${outputKeys === 1 ? 'key' : 'keys'}`;
-
-        if (state.lastWarnings.length) {
-          setStatus(`${state.lastWarnings.length} duplicate ${state.lastWarnings.length === 1 ? 'key' : 'keys'} after conversion`, 'warn');
-        } else if (repairs > 0) {
-          setStatus(`Converted after ${repairs} URL quote ${repairs === 1 ? 'repair' : 'repairs'}`, 'warn');
-        } else {
-          setStatus('Converted', 'ok');
-        }
-        els.changeCount.textContent = `${state.changedKeys} ${state.changedKeys === 1 ? 'key' : 'keys'} changed`;
-        els.changeCount.className = 'status ok show change-count';
-      } catch (error) {
-        clearOutput();
-        setStatus(error.message || 'Invalid JSON', 'err');
-      }
+      renderOutput(result.output);
+      els.inputMeta.textContent = `${result.totalKeys} ${result.totalKeys === 1 ? 'key' : 'keys'}`;
+      els.outputMeta.textContent = `${result.totalKeys} ${result.totalKeys === 1 ? 'key' : 'keys'}`;
+      setStatus('Converted', 'ok');
+      els.changeCount.textContent = `${state.changedKeys} ${state.changedKeys === 1 ? 'key' : 'keys'} changed`;
+      els.changeCount.className = 'status ok show change-count';
     }
 
     async function copyOutput() {
