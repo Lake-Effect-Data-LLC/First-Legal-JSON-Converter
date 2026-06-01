@@ -198,7 +198,7 @@
     .workspace {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      min-height: 520px;
+      align-items: stretch;
     }
 
     .panel {
@@ -237,8 +237,9 @@
 
     textarea {
       width: 100%;
-      flex: 1;
-      min-height: 440px;
+      height: 320px;
+      min-height: 220px;
+      max-height: 620px;
       resize: vertical;
       border: 0;
       outline: 0;
@@ -249,6 +250,7 @@
       font-size: 13px;
       line-height: 1.55;
       tab-size: 2;
+      overflow: auto;
     }
 
     textarea:focus {
@@ -400,7 +402,7 @@
             Copy
           </button>
           <button class="btn" id="clear-btn" type="button">
-            Clear
+            Clear All
           </button>
         </div>
       </div>
@@ -533,6 +535,17 @@
       els.status.className = 'status';
     }
 
+    function fitTextarea(textarea) {
+      textarea.style.height = 'auto';
+      const nextHeight = Math.min(Math.max(textarea.scrollHeight, 220), 620);
+      textarea.style.height = `${nextHeight}px`;
+    }
+
+    function fitTextareas() {
+      fitTextarea(els.input);
+      fitTextarea(els.output);
+    }
+
     function updateMode(nextMode) {
       state.mode = nextMode;
       const toCamel = nextMode === 'toCamel';
@@ -542,6 +555,7 @@
       els.toPascal.setAttribute('aria-pressed', String(!toCamel));
       els.output.value = '';
       els.outputMeta.textContent = '0 keys';
+      fitTextareas();
       setStatus('Mode selected. Press Convert to update the output.', 'warn');
     }
 
@@ -570,6 +584,7 @@
         els.output.value = '';
         els.inputMeta.textContent = '0 keys';
         els.outputMeta.textContent = '0 keys';
+        fitTextareas();
         clearStatus();
         return;
       }
@@ -582,6 +597,7 @@
         const outputKeys = countKeys(result);
 
         els.output.value = JSON.stringify(result, null, 2);
+        fitTextareas();
         els.inputMeta.textContent = `${inputKeys} ${inputKeys === 1 ? 'key' : 'keys'}`;
         els.outputMeta.textContent = `${outputKeys} ${outputKeys === 1 ? 'key' : 'keys'}`;
 
@@ -593,6 +609,7 @@
       } catch (error) {
         els.output.value = '';
         els.outputMeta.textContent = '0 keys';
+        fitTextareas();
         setStatus(error.message || 'Invalid JSON', 'err');
       }
     }
@@ -619,6 +636,7 @@
       els.output.value = '';
       els.inputMeta.textContent = '0 keys';
       els.outputMeta.textContent = '0 keys';
+      fitTextareas();
       clearStatus();
       els.input.focus();
     }
@@ -632,10 +650,12 @@
       updateInputMeta();
       els.output.value = '';
       els.outputMeta.textContent = '0 keys';
+      fitTextareas();
       clearStatus();
     });
 
     updateInputMeta();
+    fitTextareas();
   </script>
 </body>
 </html>
